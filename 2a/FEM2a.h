@@ -38,8 +38,8 @@ class FEM
 {
  public:
   //Class functions
-  FEM(); // Class constructor 
-  ~FEM();									 //Class destructor
+  FEM();  //Class constructor 
+  ~FEM();	//Class destructor
 
   //Define your 2D basis functions and derivatives
   double basis_function(unsigned int node, 
@@ -59,7 +59,7 @@ class FEM
 
   //Class objects
   Triangulation<dim>   triangulation; //mesh
-  FESystem<dim>        fe;	      //FE element
+  FESystem<dim>        fe;	          //FE element
   DoFHandler<dim>      dof_handler;   //Connectivity matrices
 
   //Gaussian quadrature - These will be defined in setup_system()
@@ -69,9 +69,9 @@ class FEM
     
   //Data structures
   SparsityPattern      	        sparsity_pattern; //Sparse matrix pattern
-  SparseMatrix<double>    	K;                //Global stiffness (sparse) matrix
+  SparseMatrix<double>    	    K;                //Global stiffness (sparse) matrix
   Vector<double>                D, F;             //Global vectors - Solution vector (D) and Global force vector (F)
-  Table<2,double>	        nodeLocation;	  //Table of the coordinates of nodes by global dof number
+  Table<2,double>	              nodeLocation;	    //Table of the coordinates of nodes by global dof number
   std::map<unsigned int,double> boundary_values;  //Map of dirichlet boundary conditions 
 
   //solution name array
@@ -104,9 +104,14 @@ double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2){
     "xi" is the point (in the bi-unit domain) where the function is being evaluated.
     You need to calculate the value of the specified basis function and order at the given quadrature pt.*/
 
-  double value = 0.; //Store the value of the basis function in this variable
+  // нужно возвращать значение данной базисной функции (задается узлом) для данных xi_1, xi_2
+  // bi-unit domain - локальная система координат
+  // две координаты xi_1, xi_2, т.к. элемент двухмерный
 
-  //EDIT
+  double value = 0.; //Store the value of the basis function in this variable
+  //EDIT_DONE?
+  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
+  value = 1./4*(1 + nodeLocation[node][0]*xi_1)*(1 + nodeLocation[node][1]*xi_2);
 
   return value;
 }
@@ -119,9 +124,16 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
     You need to calculate the value of the derivative of the specified basis function and order at the given quadrature pt.
     Note that this is the derivative with respect to xi (not x)*/
 
+  // в данном случае градиент это уже не просто число, а вектор
+  // dim = 2
+  // В двумерном пространстве градиент скаляра - это вектор из 2х компонент, в 3х-мерном - из 3х
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
-  //EDIT (функция basis_gradient возвращает значения (вектор из двух компонент) для заданной базисной функции по node)
+  //EDIT_DONE? (функция basis_gradient возвращает значения (вектор из двух компонент) для заданной базисной функции по node)
+
+  values[0] = 1./4 * nodeLocation[node][0] * (1 + nodeLocation[node][1] * xi_2);
+  values[1] = 1./4 * nodeLocation[node][1] * (1 + nodeLocation[node][0] * xi_1);
+
 
   return values;
 }
@@ -129,13 +141,12 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
 //Define the problem domain and generate the mesh
 template <int dim>
 void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
-
+  // указать параметры сетки
   //Define the limits of your domain
-  double x_min = , //EDIT - define the left limit of the domain, etc.
-    // надо указать параметры сетки
-    x_max = , //EDIT
-    y_min = , //EDIT
-    y_max = ; //EDIT
+  double x_min = 0, //EDIT_DONE - define the left limit of the domain, etc.
+         x_max = 0.03, //EDIT_DONE
+         y_min = 0, //EDIT_DONE
+         y_max = 0.08; //EDIT_DONE
 
   Point<dim,double> min(x_min,y_min),
     max(x_max,y_max);
@@ -146,7 +157,7 @@ void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 template <int dim>
 void FEM<dim>::define_boundary_conds(){
 
-  //EDIT - Define the Dirichlet boundary conditions.
+  //EDIT_DONE? - Define the Dirichlet boundary conditions.
   // определить граничные условия Дирихле, аналогично первой лабе, но теперь node location это Table (массив размера 2)
 	
   /*Note: this will be very similiar to the define_boundary_conds function
@@ -161,19 +172,28 @@ void FEM<dim>::define_boundary_conds(){
     the global node number; the column index refers to the x or y component (0 or 1 for 2D).
     e.g. nodeLocation[7][1] is the y coordinate of global node 7*/
 
-// локальная нумерация в элементе:
-// 2 3
-// 0 1
-// глобальная нумерация (четыре элемента):
-//  6  (7)  8       (0,2) (1,2) (2,2)
-// (3) (4) (5)  ==> (0,1) (1,1) (2,1)
-//  0  (1)  2       (0,0) (1,0) (2,0)
-// nodeLocation[глобальный номер узла][x,y]
-// у нулевого узла будут координаты по x,y: 0, 0
-// у первого узла будут координаты по x,y: 1, 0
-// у пятого узла будут координаты по x,y: 2, 1
+  // локальная нумерация в элементе:
+  // 2 3
+  // 0 1
+  // глобальная нумерация (четыре элемента):
+  //  6  (7)  8       (0,2) (1,2) (2,2)
+  // (3) (4) (5)  ==> (0,1) (1,1) (2,1)
+  //  0  (1)  2       (0,0) (1,0) (2,0)
+  // nodeLocation[глобальный номер узла][x,y]
+  // у нулевого узла будут координаты по x,y: 0, 0
+  // у первого узла будут координаты по x,y: 1, 0
+  // у пятого узла будут координаты по x,y: 2, 1
 
   const unsigned int totalNodes = dof_handler.n_dofs(); //Total number of nodes
+
+  for(unsigned int globalNode=0; globalNode < totalNodes; globalNode++){
+    if(nodeLocation[globalNode][1] == 0){     // при y = 0 
+      boundary_values[globalNode] = 300 * (1 + 1./3 * nodeLocation[globalNode][0]);
+    }
+    if(nodeLocation[globalNode][1] == 0.08){     // при y = 0.08
+      boundary_values[globalNode] = 310 * (1 + 8 * pow(nodeLocation[globalNode][0], 2));
+    }
+  }
 }
 
 //Setup data structures (sparse matrix, vectors)
@@ -230,7 +250,7 @@ void FEM<dim>::assemble_system(){
   K=0; F=0;
 
   const unsigned int   	    dofs_per_elem = fe.dofs_per_cell; //This gives you number of degrees of freedom per element
-  FullMatrix<double> 	    Klocal (dofs_per_elem, dofs_per_elem);
+  FullMatrix<double> 	      Klocal (dofs_per_elem, dofs_per_elem);
   Vector<double>      	    Flocal (dofs_per_elem);
   std::vector<unsigned int> local_dof_indices (dofs_per_elem);
 
@@ -252,19 +272,19 @@ void FEM<dim>::assemble_system(){
     Flocal = 0.;
     for(unsigned int q1=0; q1<quadRule; q1++){
       for(unsigned int q2=0; q2<quadRule; q2++){
-	Jacobian = 0.;
-	for(unsigned int i=0;i<dim;i++){
-	  for(unsigned int j=0;j<dim;j++){
-	    for(unsigned int A=0; A<dofs_per_elem; A++){
-	      Jacobian[i][j] += nodeLocation[local_dof_indices[A]][i]
-		*basis_gradient(A,quad_points[q1],quad_points[q2])[j]; // заполнение якобиевой матрицы
-	    }
-	  }
-	}
-	detJ = Jacobian.determinant(); // подсчёт якобиана (определителя матрицы Якоби)
-	for(unsigned int A=0; A<dofs_per_elem; A++){
-	  //You would define Flocal here if it were nonzero.
-	}
+        Jacobian = 0.;
+        for(unsigned int i=0;i<dim;i++){
+          for(unsigned int j=0;j<dim;j++){
+            for(unsigned int A=0; A<dofs_per_elem; A++){
+              Jacobian[i][j] += nodeLocation[local_dof_indices[A]][i]
+                                *basis_gradient(A,quad_points[q1],quad_points[q2])[j]; // заполнение якобиевой матрицы
+            }
+          }
+        }
+        detJ = Jacobian.determinant(); // подсчёт якобиана (определителя матрицы Якоби)
+        for(unsigned int A=0; A<dofs_per_elem; A++){
+          //You would define Flocal here if it were nonzero.
+        }
       }
     }
 
@@ -280,37 +300,37 @@ void FEM<dim>::assemble_system(){
     Klocal = 0.;
     for(unsigned int q1=0; q1<quadRule; q1++){
       for(unsigned int q2=0; q2<quadRule; q2++){
-	//Find the Jacobian at a quadrature point
-	Jacobian = 0.;
-	for(unsigned int i=0;i<dim;i++){
-	  for(unsigned int j=0;j<dim;j++){
-	    for(unsigned int A=0; A<dofs_per_elem; A++){
-	      Jacobian[i][j] += nodeLocation[local_dof_indices[A]][i]
-		*basis_gradient(A,quad_points[q1],quad_points[q2])[j];
-	    }
-	  }
-	}
-	detJ = Jacobian.determinant();
-	invJacob.invert(Jacobian);
-	for(unsigned int A=0; A<dofs_per_elem; A++){
-	  for(unsigned int B=0; B<dofs_per_elem; B++){
-	    for(unsigned int i=0;i<dim;i++){
-	      for(unsigned int j=0;j<dim;j++){
-		for(unsigned int I=0;I<dim;I++){
-		  for(unsigned int J=0;J<dim;J++){
-        // здесь будет нужен якобиан
-        // потом Klocal матрицу нужно размножить, то есть из локальной сделать глобальную
-        // Klocal[A][B] = integr(по омега xi) (dN_A/dx_I * Kappa_I_J * dN_B/dx_J * оперелитель якобиана * dxi_1 * dxi_2) = 
-        // [dN_A/dx_I = dN_A/dxi_1 * dxi_1/dx_I + dN_A/dxi_2 * dxi_2/dx_I] - функция, обратная к якобиану
-		    // якобиан получаем используя изопараметрическую формулировку, то есть используем те же базисные функции N_A, N_B, что для интерполяции пробных и весовых функции используем для отображения xi в x (в коже это учтено 17 строк назад, 288 и 289) 
-        // нужно использовать якобиан и матрицу, обратную к якоби
-        //EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
-		  }
-		}
-	      }
-	    }
-	  }
-	}
+        //Find the Jacobian at a quadrature point
+        Jacobian = 0.;
+        for(unsigned int i=0;i<dim;i++){
+          for(unsigned int j=0;j<dim;j++){
+            for(unsigned int A=0; A<dofs_per_elem; A++){
+              Jacobian[i][j] += nodeLocation[local_dof_indices[A]][i]
+                                *basis_gradient(A,quad_points[q1],quad_points[q2])[j];
+            }
+          }
+        }
+        detJ = Jacobian.determinant();
+        invJacob.invert(Jacobian);   // находим матрицу, обратную Якобиевой
+        for(unsigned int A=0; A<dofs_per_elem; A++){
+          for(unsigned int B=0; B<dofs_per_elem; B++){
+            for(unsigned int i=0;i<dim;i++){
+              for(unsigned int j=0;j<dim;j++){
+                for(unsigned int I=0;I<dim;I++){
+                  for(unsigned int J=0;J<dim;J++){
+                    // здесь будет нужен якобиан
+                    // потом Klocal матрицу нужно размножить, то есть из локальной сделать глобальную
+                    // Klocal[A][B] = integr(по омега xi) (dN_A/dx_I * Kappa_I_J * dN_B/dx_J * оперелитель якобиана * dxi_1 * dxi_2) = 
+                    // [dN_A/dx_I = dN_A/dxi_1 * dxi_1/dx_I + dN_A/dxi_2 * dxi_2/dx_I] - функция, обратная к якобиану
+                    // якобиан получаем используя изопараметрическую формулировку, то есть используем те же базисные функции N_A, N_B, что для интерполяции пробных и весовых функции используем для отображения xi в x (в коже это учтено 17 строк назад, 288 и 289) 
+                    // нужно использовать якобиан и матрицу, обратную к якоби
+                    //EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     }	
 
@@ -318,12 +338,11 @@ void FEM<dim>::assemble_system(){
     for(unsigned int A=0; A<dofs_per_elem; A++){
       //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-	//EDIT - Assemble K from Klocal (you can look at lab1)
-  // ассемблирование из локальной матрицы в глобальную (то же, что и было до этого в первой лабе)
+        //EDIT - Assemble K from Klocal (you can look at lab1)
+        // ассемблирование из локальной матрицы в глобальную (то же, что и было до этого в первой лабе)
       }
     }
-
-  }
+  }   // конец цикла по элементам
 
   //Apply Dirichlet boundary conditions
   MatrixTools::apply_boundary_values (boundary_values, K, D, F, false);
