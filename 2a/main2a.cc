@@ -20,14 +20,14 @@ int main (){
 
 		//NOTE: This is where you define the number of elements in the mesh
 		std::vector<unsigned int> num_of_elems(dimension); // кол-во элементов
-		num_of_elems[0] = 4; // по x
-		num_of_elems[1] = 8; // по y
+		num_of_elems[0] = 15; // по x
+		num_of_elems[1] = 40; // по y
 		// For example, a 4 x 8 element mesh in 2D
 
 		problemObject.generate_mesh(num_of_elems);
-	  problemObject.setup_system();
-	  problemObject.assemble_system();
-	  problemObject.solve();
+		problemObject.setup_system();
+		problemObject.assemble_system();
+		problemObject.solve();
 		problemObject.output_results();
 
     //write solutions to h5 file
