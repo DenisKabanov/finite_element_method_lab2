@@ -130,9 +130,9 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
   //EDIT_DONE? (функция basis_gradient возвращает значения (вектор из двух компонент) для заданной базисной функции по node)
-
-  values[0] = 1./4 * nodeLocation[node][0] * (1 + nodeLocation[node][1] * xi_2);
-  values[1] = 1./4 * nodeLocation[node][1] * (1 + nodeLocation[node][0] * xi_1);
+  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
+  values[0] = 1./4 * nodeLocation[node][0] * (1 + nodeLocation[node][1] * xi_2);  // производная по xi_1
+  values[1] = 1./4 * nodeLocation[node][1] * (1 + nodeLocation[node][0] * xi_1);  // производная по xi_2
 
 
   return values;
@@ -283,7 +283,7 @@ void FEM<dim>::assemble_system(){
         }
         detJ = Jacobian.determinant(); // подсчёт якобиана (определителя матрицы Якоби)
         for(unsigned int A=0; A<dofs_per_elem; A++){
-          //You would define Flocal here if it were nonzero.
+          //EDIT You would define Flocal here if it were nonzero.
         }
       }
     }
@@ -302,8 +302,8 @@ void FEM<dim>::assemble_system(){
       for(unsigned int q2=0; q2<quadRule; q2++){
         //Find the Jacobian at a quadrature point
         Jacobian = 0.;
-        for(unsigned int i=0;i<dim;i++){
-          for(unsigned int j=0;j<dim;j++){
+        for(unsigned int i=0;i<dim;i++){  // строки матрицы Якоби
+          for(unsigned int j=0;j<dim;j++){  // столбцы матрицы Якоби
             for(unsigned int A=0; A<dofs_per_elem; A++){
               Jacobian[i][j] += nodeLocation[local_dof_indices[A]][i]
                                 *basis_gradient(A,quad_points[q1],quad_points[q2])[j];
@@ -312,7 +312,7 @@ void FEM<dim>::assemble_system(){
         }
         detJ = Jacobian.determinant();
         invJacob.invert(Jacobian);   // находим матрицу, обратную Якобиевой
-        for(unsigned int A=0; A<dofs_per_elem; A++){
+        for(unsigned int A=0; A<dofs_per_elem; A++){  // n_ne - кол-во узлов в элементе
           for(unsigned int B=0; B<dofs_per_elem; B++){
             for(unsigned int i=0;i<dim;i++){
               for(unsigned int j=0;j<dim;j++){
@@ -324,7 +324,10 @@ void FEM<dim>::assemble_system(){
                     // [dN_A/dx_I = dN_A/dxi_1 * dxi_1/dx_I + dN_A/dxi_2 * dxi_2/dx_I] - функция, обратная к якобиану
                     // якобиан получаем используя изопараметрическую формулировку, то есть используем те же базисные функции N_A, N_B, что для интерполяции пробных и весовых функции используем для отображения xi в x (в коже это учтено 17 строк назад, 288 и 289) 
                     // нужно использовать якобиан и матрицу, обратную к якоби
-                    //EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                    //EDIT_DONE? - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                    Klocal.add(A, B, basis_gradient(A, quad_points[q1], quad_points[q2])[I] * invJacob[I][i] * kappa[i][j] 
+                                     * basis_gradient(B, quad_points[q1], quad_points[q2])[J] * invJacob[J][j] * detJ 
+                                     * quad_weight[q1] * quad_weight[q2]);
                   }
                 }
               }
@@ -336,10 +339,11 @@ void FEM<dim>::assemble_system(){
 
     //Assemble local K and F into global K and F
     for(unsigned int A=0; A<dofs_per_elem; A++){
-      //You would assemble F here if it were nonzero.
+      //EDIT You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-        //EDIT - Assemble K from Klocal (you can look at lab1)
+        //EDIT_DONE? - Assemble K from Klocal (you can look at lab1)
         // ассемблирование из локальной матрицы в глобальную (то же, что и было до этого в первой лабе)
+        K.add(local_dof_indices[A], local_dof_indices[B], Klocal[A][B]);
       }
     }
   }   // конец цикла по элементам
