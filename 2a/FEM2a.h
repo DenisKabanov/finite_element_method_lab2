@@ -229,14 +229,43 @@ void FEM<dim>::setup_system(){
   //Define quadrature rule - again, you decide what quad rule is needed
   // integr(от-1 до 1)(integr(от-1 до 1) f(вектор xi) dxi_1) dxi_2 = [сначала применяем квадратурные формулы Гаусса сначала к внутреннему интегралу] = 
   // = integr(от-1 до 1) (summ(f(xi_I,xi_2)*w_I)) dxi_2 = [делаем то же самое, но для xi_2]
-  quadRule = 2; //EDIT (кол-во точек для интегрирования, в отличае от первой лабы - нужно вычислять двойной интеграл) - Number of quadrature points along one dimension
-  quad_points.resize(quadRule); quad_weight.resize(quadRule);
+  // quadRule = 2; //EDIT (кол-во точек для интегрирования, в отличае от первой лабы - нужно вычислять двойной интеграл) - Number of quadrature points along one dimension
+  // quad_points.resize(quadRule); quad_weight.resize(quadRule);
 
-  quad_points[0] = -sqrt(1./3.); //EDIT
-  quad_points[1] = sqrt(1./3.); //EDIT
+  // quad_points[0] = -sqrt(1./3.); //EDIT
+  // quad_points[1] = sqrt(1./3.); //EDIT
 
-  quad_weight[0] = 1.; //EDIT
-  quad_weight[1] = 1.; //EDIT
+  // quad_weight[0] = 1.; //EDIT
+  // quad_weight[1] = 1.; //EDIT
+
+// =============================================
+
+    quadRule = 10;
+    quad_points.resize(quadRule); quad_weight.resize(quadRule);
+
+    quad_points[0] = -0.973906528517172;
+    quad_points[1] = -0.865063366688985;
+    quad_points[2] = -0.679409568299024;
+    quad_points[3] = -0.433395394129247;
+    quad_points[4] = -0.148874338981631;
+    quad_points[5] = 0.148874338981631;
+    quad_points[6] = 0.433395394129247;
+    quad_points[7] = 0.679409568299024;
+    quad_points[8] = 0.865063366688985;
+    quad_points[9] = 0.973906528517172;
+
+    quad_weight[0] = 0.066671344308688;
+    quad_weight[1] = 0.149451349150581;
+    quad_weight[2] = 0.219086362515982;
+    quad_weight[3] = 0.269266719309996;
+    quad_weight[4] = 0.295524224714753;
+    quad_weight[5] = 0.295524224714753;
+    quad_weight[6] = 0.269266719309996; 
+    quad_weight[7] = 0.219086362515982; 
+    quad_weight[8] = 0.149451349150581;
+    quad_weight[9] = 0.066671344308688;
+// =============================================
+
 
   //Just some notes...
   std::cout << "   Number of active elems:       " << triangulation.n_active_cells() << std::endl;
@@ -283,7 +312,7 @@ void FEM<dim>::assemble_system(){
         }
         detJ = Jacobian.determinant(); // подсчёт якобиана (определителя матрицы Якоби)
         for(unsigned int A=0; A<dofs_per_elem; A++){
-          //EDIT You would define Flocal here if it were nonzero.
+          //You would define Flocal here if it were nonzero.
         }
       }
     }
@@ -339,7 +368,7 @@ void FEM<dim>::assemble_system(){
 
     //Assemble local K and F into global K and F
     for(unsigned int A=0; A<dofs_per_elem; A++){
-      //EDIT You would assemble F here if it were nonzero.
+      //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
         //EDIT_DONE? - Assemble K from Klocal (you can look at lab1)
         // ассемблирование из локальной матрицы в глобальную (то же, что и было до этого в первой лабе)
