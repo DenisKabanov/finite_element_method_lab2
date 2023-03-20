@@ -108,7 +108,9 @@ double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2, dou
 
   double value = 0.; //Store the value of the basis function in this variable
 
-  //EDIT
+  //EDIT_DONE
+  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
+  value = 1./8*(1 + nodeLocation[node][0]*xi_1)*(1 + nodeLocation[node][1]*xi_2)*(1 + nodeLocation[node][2]*xi_3);
 
   return value;
 }
@@ -123,7 +125,12 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
 
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
-  //EDIT
+  //EDIT_DONE
+  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
+  values[0] = 1./8 * nodeLocation[node][0] * (1 + nodeLocation[node][1] * xi_2) * (1 + nodeLocation[node][2] * xi_3);  // производная по xi_1
+  values[1] = 1./8 * nodeLocation[node][1] * (1 + nodeLocation[node][0] * xi_1) * (1 + nodeLocation[node][2] * xi_3);  // производная по xi_2
+  values[2] = 1./8 * nodeLocation[node][2] * (1 + nodeLocation[node][0] * xi_1) * (1 + nodeLocation[node][1] * xi_2);  // производная по xi_3
+
 
   return values;
 }
@@ -149,7 +156,7 @@ void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 template <int dim>
 void FEM<dim>::define_boundary_conds(){
 
-  //EDIT_DONE? - Define the Dirichlet boundary conditions.
+  //EDIT_DONE - Define the Dirichlet boundary conditions.
 	
   /*Note: this will be very similiar to the define_boundary_conds function
     in the lab1. You will loop over all nodes and use "nodeLocations"
@@ -299,7 +306,10 @@ void FEM<dim>::assemble_system(){
                 for(unsigned int j=0;j<dim;j++){
                   for(unsigned int I=0;I<dim;I++){
                     for(unsigned int J=0;J<dim;J++){
-                      //EDIT - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                      //EDIT_DONE? - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                      Klocal.add(A, B, basis_gradient(A, quad_points[q1], quad_points[q2], quad_points[q3])[I] * invJacob[I][i] * kappa[i][j] 
+                                       * basis_gradient(B, quad_points[q1], quad_points[q2], quad_points[q3])[J] * invJacob[J][j] * detJ 
+                                       * quad_weight[q1] * quad_weight[q2] * quad_weight[q3]);
                     }
                   }
                 }
@@ -314,7 +324,8 @@ void FEM<dim>::assemble_system(){
     for(unsigned int A=0; A<dofs_per_elem; A++){
       //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-	      //EDIT - Assemble K from Klocal (you can look at lab1)
+	      //EDIT_DONE? - Assemble K from Klocal (you can look at lab1)
+        K.add(local_dof_indices[A], local_dof_indices[B], Klocal[A][B]);
       }
     }
 
