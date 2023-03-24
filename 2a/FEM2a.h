@@ -109,9 +109,22 @@ double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2){
   // две координаты xi_1, xi_2, т.к. элемент двухмерный
 
   double value = 0.; //Store the value of the basis function in this variable
-  //EDIT_DONE?
-  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
-  value = 1./4*(1 + nodeLocation[node][0]*xi_1)*(1 + nodeLocation[node][1]*xi_2);
+  //EDIT_DONE
+
+  switch(node){
+    case 0:
+      value = 1./4*(1.-xi_1)*(1.-xi_2);
+      break;
+    case 1:
+      value = 1./4*(1.+xi_1)*(1.-xi_2);
+      break;
+    case 2:
+      value = 1./4*(1.-xi_1)*(1.+xi_2);
+      break;
+    case 3:
+      value = 1./4*(1.+xi_1)*(1.+xi_2);
+      break;
+  }
 
   return value;
 }
@@ -129,12 +142,27 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
   // В двумерном пространстве градиент скаляра - это вектор из 2х компонент, в 3х-мерном - из 3х
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
-  //EDIT_DONE? (функция basis_gradient возвращает значения (вектор из двух компонент) для заданной базисной функции по node)
-  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
-  values[0] = 1./4 * nodeLocation[node][0] * (1 + nodeLocation[node][1] * xi_2);  // производная по xi_1
-  values[1] = 1./4 * nodeLocation[node][1] * (1 + nodeLocation[node][0] * xi_1);  // производная по xi_2
-
-
+  //EDIT_DONE (функция basis_gradient возвращает значения (вектор из двух компонент) для заданной базисной функции по node)
+  
+  switch(node){
+    case 0:
+      values[0] = -1./4*(1.-xi_2);
+      values[1] = -1./4*(1.-xi_1);
+      break;
+    case 1:
+      values[0] = 1./4*(1.-xi_2);
+      values[1] = -1./4*(1.+xi_1);
+      break;
+    case 2:
+      values[0] = -1./4*(1.+xi_2);
+      values[1] = 1./4*(1.-xi_1);
+      break;
+    case 3:
+      values[0] = 1./4*(1.+xi_2);
+      values[1] = 1./4*(1.+xi_1);
+      break;
+  }
+ 
   return values;
 }
 
@@ -144,9 +172,9 @@ void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
   // указать параметры сетки
   //Define the limits of your domain
   double x_min = 0, //EDIT_DONE - define the left limit of the domain, etc.
-         x_max = 0.03, //EDIT_DONE
-         y_min = 0, //EDIT_DONE
-         y_max = 0.08; //EDIT_DONE
+         x_max = 0.03,
+         y_min = 0,
+         y_max = 0.08;
 
   Point<dim,double> min(x_min,y_min),
     max(x_max,y_max);
@@ -157,7 +185,7 @@ void FEM<dim>::generate_mesh(std::vector<unsigned int> numberOfElements){
 template <int dim>
 void FEM<dim>::define_boundary_conds(){
 
-  //EDIT_DONE? - Define the Dirichlet boundary conditions.
+  //EDIT_DONE - Define the Dirichlet boundary conditions.
   // определить граничные условия Дирихле, аналогично первой лабе, но теперь node location это Table (массив размера 2)
 	
   /*Note: this will be very similiar to the define_boundary_conds function
@@ -229,43 +257,25 @@ void FEM<dim>::setup_system(){
   //Define quadrature rule - again, you decide what quad rule is needed
   // integr(от-1 до 1)(integr(от-1 до 1) f(вектор xi) dxi_1) dxi_2 = [сначала применяем квадратурные формулы Гаусса сначала к внутреннему интегралу] = 
   // = integr(от-1 до 1) (summ(f(xi_I,xi_2)*w_I)) dxi_2 = [делаем то же самое, но для xi_2]
-  // quadRule = 2; //EDIT (кол-во точек для интегрирования, в отличае от первой лабы - нужно вычислять двойной интеграл) - Number of quadrature points along one dimension
+  // выбор quadrule расписан в файле quadRule
+
+  // quadRule = 2; //(кол-во точек для интегрирования, в отличае от первой лабы - нужно вычислять двойной интеграл) - Number of quadrature points along one dimension
   // quad_points.resize(quadRule); quad_weight.resize(quadRule);
+  // quad_points[0] = -sqrt(1./3.);
+  // quad_points[1] = sqrt(1./3.);
+  // quad_weight[0] = 1.;
+  // quad_weight[1] = 1.;
 
-  // quad_points[0] = -sqrt(1./3.); //EDIT
-  // quad_points[1] = sqrt(1./3.); //EDIT
-
-  // quad_weight[0] = 1.; //EDIT
-  // quad_weight[1] = 1.; //EDIT
-
-// =============================================
-
-    quadRule = 10;
-    quad_points.resize(quadRule); quad_weight.resize(quadRule);
-
-    quad_points[0] = -0.973906528517172;
-    quad_points[1] = -0.865063366688985;
-    quad_points[2] = -0.679409568299024;
-    quad_points[3] = -0.433395394129247;
-    quad_points[4] = -0.148874338981631;
-    quad_points[5] = 0.148874338981631;
-    quad_points[6] = 0.433395394129247;
-    quad_points[7] = 0.679409568299024;
-    quad_points[8] = 0.865063366688985;
-    quad_points[9] = 0.973906528517172;
-
-    quad_weight[0] = 0.066671344308688;
-    quad_weight[1] = 0.149451349150581;
-    quad_weight[2] = 0.219086362515982;
-    quad_weight[3] = 0.269266719309996;
-    quad_weight[4] = 0.295524224714753;
-    quad_weight[5] = 0.295524224714753;
-    quad_weight[6] = 0.269266719309996; 
-    quad_weight[7] = 0.219086362515982; 
-    quad_weight[8] = 0.149451349150581;
-    quad_weight[9] = 0.066671344308688;
-// =============================================
-
+  // ______________________________________
+  quadRule = 3; //EDIT_DONE - Number of quadrature points along one dimension
+  quad_points.resize(quadRule); quad_weight.resize(quadRule);
+  quad_points[0] = -0.774596669241483;
+  quad_points[1] = 0;
+  quad_points[2] = 0.774596669241483; 
+  quad_weight[0] = 0.555555555555556;
+  quad_weight[1] = 0.888888888888889;
+  quad_weight[2] = 0.555555555555556; 
+  // ______________________________________
 
   //Just some notes...
   std::cout << "   Number of active elems:       " << triangulation.n_active_cells() << std::endl;
@@ -353,7 +363,7 @@ void FEM<dim>::assemble_system(){
                     // [dN_A/dx_I = dN_A/dxi_1 * dxi_1/dx_I + dN_A/dxi_2 * dxi_2/dx_I] - функция, обратная к якобиану
                     // якобиан получаем используя изопараметрическую формулировку, то есть используем те же базисные функции N_A, N_B, что для интерполяции пробных и весовых функции используем для отображения xi в x (в коже это учтено 17 строк назад, 288 и 289) 
                     // нужно использовать якобиан и матрицу, обратную к якоби
-                    //EDIT_DONE? - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                    //EDIT_DONE - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
                     Klocal.add(A, B, basis_gradient(A, quad_points[q1], quad_points[q2])[I] * invJacob[I][i] * kappa[i][j] 
                                      * basis_gradient(B, quad_points[q1], quad_points[q2])[J] * invJacob[J][j] * detJ 
                                      * quad_weight[q1] * quad_weight[q2]);
@@ -370,7 +380,7 @@ void FEM<dim>::assemble_system(){
     for(unsigned int A=0; A<dofs_per_elem; A++){
       //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-        //EDIT_DONE? - Assemble K from Klocal (you can look at lab1)
+        //EDIT_DONE - Assemble K from Klocal (you can look at lab1)
         // ассемблирование из локальной матрицы в глобальную (то же, что и было до этого в первой лабе)
         K.add(local_dof_indices[A], local_dof_indices[B], Klocal[A][B]);
       }

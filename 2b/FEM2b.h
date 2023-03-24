@@ -109,8 +109,32 @@ double FEM<dim>::basis_function(unsigned int node, double xi_1, double xi_2, dou
   double value = 0.; //Store the value of the basis function in this variable
 
   //EDIT_DONE
-  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
-  value = 1./8*(1 + nodeLocation[node][0]*xi_1)*(1 + nodeLocation[node][1]*xi_2)*(1 + nodeLocation[node][2]*xi_3);
+  switch(node){
+    case 0:
+      value = 1./8*(1.-xi_1)*(1.-xi_2)*(1.-xi_3);
+      break;
+    case 1:
+      value = 1./8*(1.+xi_1)*(1.-xi_2)*(1.-xi_3);
+      break;
+    case 2:
+      value = 1./8*(1.-xi_1)*(1.+xi_2)*(1.-xi_3);
+      break;
+    case 3:
+      value = 1./8*(1.+xi_1)*(1.+xi_2)*(1.-xi_3);
+      break;
+    case 4:
+      value = 1./8*(1.-xi_1)*(1.-xi_2)*(1.+xi_3);
+      break;
+    case 5:
+      value = 1./8*(1.+xi_1)*(1.-xi_2)*(1.+xi_3);
+      break;
+    case 6:
+      value = 1./8*(1.-xi_1)*(1.+xi_2)*(1.+xi_3);
+      break;
+    case 7:
+      value = 1./8*(1.+xi_1)*(1.+xi_2)*(1.+xi_3);
+      break;
+  }
 
   return value;
 }
@@ -126,11 +150,48 @@ std::vector<double> FEM<dim>::basis_gradient(unsigned int node, double xi_1, dou
   std::vector<double> values(dim,0.0); //Store the value of the gradient of the basis function in this variable
 
   //EDIT_DONE
-  // nodeLocation[node][0] - xi_1_A, nodeLocation[node][1] - xi_2_A, node = A
-  values[0] = 1./8 * nodeLocation[node][0] * (1 + nodeLocation[node][1] * xi_2) * (1 + nodeLocation[node][2] * xi_3);  // производная по xi_1
-  values[1] = 1./8 * nodeLocation[node][1] * (1 + nodeLocation[node][0] * xi_1) * (1 + nodeLocation[node][2] * xi_3);  // производная по xi_2
-  values[2] = 1./8 * nodeLocation[node][2] * (1 + nodeLocation[node][0] * xi_1) * (1 + nodeLocation[node][1] * xi_2);  // производная по xi_3
-
+  switch(node){
+    case 0:
+      values[0] = -1./8*(1.-xi_2)*(1.-xi_3);
+      values[1] = -1./8*(1.-xi_1)*(1.-xi_3);
+      values[2] = -1./8*(1.-xi_1)*(1.-xi_2);
+      break;
+    case 1:
+      values[0] = 1./8*(1.-xi_2)*(1.-xi_3);
+      values[1] = -1./8*(1.+xi_1)*(1.-xi_3);
+      values[2] = -1./8*(1.+xi_1)*(1.-xi_2);
+      break;
+    case 2:
+      values[0] = -1./8*(1.+xi_2)*(1.-xi_3);
+      values[1] = 1./8*(1.-xi_1)*(1.-xi_3);
+      values[2] = -1./8*(1.-xi_1)*(1.+xi_2);
+      break;
+    case 3:
+      values[0] = 1./8*(1.+xi_2)*(1.-xi_3);
+      values[1] = 1./8*(1.+xi_1)*(1.-xi_3);
+      values[2] = -1./8*(1.+xi_1)*(1.+xi_2);
+      break;
+    case 4:
+      values[0] = -1./8*(1.-xi_2)*(1.+xi_3);
+      values[1] = -1./8*(1.-xi_1)*(1.+xi_3);
+      values[2] = 1./8*(1.-xi_1)*(1.-xi_2);
+      break;
+    case 5:
+      values[0] = 1./8*(1.-xi_2)*(1.+xi_3);
+      values[1] = -1./8*(1.+xi_1)*(1.+xi_3);
+      values[2] = 1./8*(1.+xi_1)*(1.-xi_2);
+      break;
+    case 6:
+      values[0] = -1./8*(1.+xi_2)*(1.+xi_3);
+      values[1] = 1./8*(1.-xi_1)*(1.+xi_3);
+      values[2] = 1./8*(1.-xi_1)*(1.+xi_2);
+      break; 
+    case 7:
+      values[0] = 1./8*(1.+xi_2)*(1.+xi_3);
+      values[1] = 1./8*(1.+xi_1)*(1.+xi_3);
+      values[2] = 1./8*(1.+xi_1)*(1.+xi_2);
+      break;       
+  }
 
   return values;
 }
@@ -177,7 +238,7 @@ void FEM<dim>::define_boundary_conds(){
       boundary_values[globalNode] = 300 * (1 + 1./3 * (nodeLocation[globalNode][1] + nodeLocation[globalNode][2]));
     }
     if(nodeLocation[globalNode][0] == 0.04){  // при х = 0.04
-      boundary_values[globalNode] = 310 * (1 + 8 * (nodeLocation[globalNode][1] + nodeLocation[globalNode][2]));
+      boundary_values[globalNode] = 310 * (1 + 1./3 * (nodeLocation[globalNode][1] + nodeLocation[globalNode][2]));
     }
   }
 }
@@ -213,14 +274,35 @@ void FEM<dim>::setup_system(){
   D.reinit (dof_handler.n_dofs());
 
   //Define quadrature rule - again, you decide what quad rule is needed
-  quadRule = 2; //EDIT - Number of quadrature points along one dimension
+  
+  // quadRule = 2; //Number of quadrature points along one dimension
+  // quad_points.resize(quadRule); quad_weight.resize(quadRule);
+  // quad_points[0] = -sqrt(1./3.);
+  // quad_points[1] = sqrt(1./3.);
+  // quad_weight[0] = 1.;
+  // quad_weight[1] = 1.;
+
+  // ______________________________________
+  // quadRule = 3; //Number of quadrature points along one dimension
+  // quad_points.resize(quadRule); quad_weight.resize(quadRule);
+  // quad_points[0] = -0.774596669241483;
+  // quad_points[1] = 0;
+  // quad_points[2] = 0.774596669241483; 
+  // quad_weight[0] = 0.555555555555556;
+  // quad_weight[1] = 0.888888888888889; 
+  // quad_weight[2] = 0.555555555555556; 
+  // ______________________________________
+  quadRule = 4; //EDIT_DONE - Number of quadrature points along one dimension
   quad_points.resize(quadRule); quad_weight.resize(quadRule);
-
-  quad_points[0] = -sqrt(1./3.); //EDIT
-  quad_points[1] = sqrt(1./3.); //EDIT
-
-  quad_weight[0] = 1.; //EDIT
-  quad_weight[1] = 1.; //EDIT
+  quad_points[0] = -0.861136311594053;
+  quad_points[1] = -0.339981043584856;
+  quad_points[2] = 0.339981043584856;
+  quad_points[3] = 0.861136311594053;
+  quad_weight[0] = 0.347854845137454;
+  quad_weight[1] = 0.652145154862546;
+  quad_weight[2] = 0.652145154862546;
+  quad_weight[3] = 0.347854845137454;
+  // ______________________________________
 
   //Just some notes...
   std::cout << "   Number of active elems:       " << triangulation.n_active_cells() << std::endl;
@@ -306,7 +388,7 @@ void FEM<dim>::assemble_system(){
                 for(unsigned int j=0;j<dim;j++){
                   for(unsigned int I=0;I<dim;I++){
                     for(unsigned int J=0;J<dim;J++){
-                      //EDIT_DONE? - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
+                      //EDIT_DONE - Define Klocal. You will need to use the inverse Jacobian ("invJacob") and "detJ"
                       Klocal.add(A, B, basis_gradient(A, quad_points[q1], quad_points[q2], quad_points[q3])[I] * invJacob[I][i] * kappa[i][j] 
                                        * basis_gradient(B, quad_points[q1], quad_points[q2], quad_points[q3])[J] * invJacob[J][j] * detJ 
                                        * quad_weight[q1] * quad_weight[q2] * quad_weight[q3]);
@@ -324,7 +406,7 @@ void FEM<dim>::assemble_system(){
     for(unsigned int A=0; A<dofs_per_elem; A++){
       //You would assemble F here if it were nonzero.
       for(unsigned int B=0; B<dofs_per_elem; B++){
-	      //EDIT_DONE? - Assemble K from Klocal (you can look at lab1)
+	      //EDIT_DONE - Assemble K from Klocal (you can look at lab1)
         K.add(local_dof_indices[A], local_dof_indices[B], Klocal[A][B]);
       }
     }
